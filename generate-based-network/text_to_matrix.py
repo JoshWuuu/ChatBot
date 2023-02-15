@@ -18,25 +18,3 @@ from io import open
 import itertools
 import math
 import json
-
-def printLines(file, n=10):
-    """
-    count converstational lines
-    
-    Input:
-    - file: str, folder path
-    - n: int, number of lines to print
-
-    Returns:
-    """
-    with open(file, 'rb') as datafile:
-        lines = datafile.readlines()
-    
-    for line in lines[:n]:
-        print(line)
-
-def main():
-    pass
-
-if __name__ == "__main__":
-    main()
