@@ -18,3 +18,15 @@ from io import open
 import itertools
 import math
 import json
+
+def model_train():
+    """   
+    train the model with the attention encoder and decoder layers for chatbot
+    
+    Input
+    - input_variable: (max_length, batch_size)
+
+    Returns
+    - loss: (1)
+    """
+    

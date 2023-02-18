@@ -3,21 +3,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from data_cleaning import *
+
 import torch
-from torch.jit import script, trace
-import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
-import csv
 import random
-import re
 import os
-import unicodedata
-import codecs
-from io import open
 import itertools
-import math
-import json
 
 def indexesFromSentence(voc, sentence):
     """
@@ -154,7 +145,7 @@ def main():
     ))
 
     # Example for validation
-    batch_size = 5
+    small_batch_size = 5
     batches = batch2TrainData(voc,  [random.choice(trimmed_pairs) for _ in range(small_batch_size)])
 
     input_variable, lengths, target_variable, mask, max_target_len = batches

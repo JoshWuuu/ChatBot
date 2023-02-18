@@ -3,21 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import torch
-from torch.jit import script, trace
-import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
-import csv
-import random
 import re
 import os
 import unicodedata
-import codecs
 from io import open
-import itertools
-import math
-import json
 
 PAD_token = 0  # Used for padding short sentences
 SOS_token = 1  # Start-of-sentence token
@@ -40,15 +29,15 @@ class Voc:
         self.num_words = 3  # Count SOS, EOS, PAD
     
     def addWord(self, word):
-    """
-    add word to word2index, word2count and index2word dictionary, 
-    and also keep track of the word count of whole dictionary
-    
-    Input:
-    - word: str
+        """
+        add word to word2index, word2count and index2word dictionary, 
+        and also keep track of the word count of whole dictionary
+        
+        Input:
+        - word: str
 
-    Returns:
-    """
+        Returns:
+        """
         if word not in self.word2index:
             self.word2index[word] = self.num_words
             self.word2count[word] = 1
@@ -58,26 +47,26 @@ class Voc:
             self.word2count[word] += 1
     
     def addSentence(self, sentence):
-    """
-    add word of sentence to the addword function 
-    
-    Input:
-    - sentence: str
+        """
+        add word of sentence to the addword function 
+        
+        Input:
+        - sentence: str
 
-    Returns:
-    """
+        Returns:
+        """
         for word in sentence.split(' '):
             self.addWord(word)
 
     def trim(self, min_count):
-    """
-    if word count below a certain count threshold, rm it
-    
-    Input:
-    - min_count: int
+        """
+        if word count below a certain count threshold, rm it
+        
+        Input:
+        - min_count: int
 
-    Returns:
-    """
+        Returns:
+        """
         if self.trimmed:
             return 
         self.trimmed = True
