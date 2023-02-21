@@ -3,20 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import torch
-from torch.jit import script, trace
-import torch.nn as nn
-from torch import optim
-import torch.nn.functional as F
 import csv
-import random
-import re
 import os
-import unicodedata
 import codecs
 from io import open
-import itertools
-import math
 import json
 
 def printLines(file, n=10):
@@ -48,7 +38,7 @@ def linesAndConversations(file):
     """
     lines = {}
     conversations = {}
-    with open(fileName, 'r', encoding='iso-8859-1') as f:
+    with open(file, 'r', encoding='iso-8859-1') as f:
         for line in f:
             lineJson = json.loads(line)
             # Extract fields for line object
@@ -136,5 +126,6 @@ def main():
 # b'"The ""real you""."\tLike my fear of wearing pastels?\n'
 # b'do you listen to this crap?\tWhat crap?\n'
 # b"What crap?\tMe.  This endless ...blonde babble. I'm like, boring myself.\n"
+
 if __name__ == "__main__":
     main()

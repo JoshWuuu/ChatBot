@@ -74,8 +74,8 @@ class Voc:
         keep_words= []
 
         for key, value in self.word2count.items():
-            if v >= min_count:
-                keep_words.append(k)
+            if value >= min_count:
+                keep_words.append(key)
         
         print('keep words ration {} / {}  = {:.4f}'.format(
             len(keep_words), len(self.word2index), len(keep_words)/ len(self.word2index)
@@ -204,6 +204,7 @@ def main():
     save_dir = os.path.join("data", "save")
     corpus_name = "movie-corpus"
     MAX_LENGTH = 10  # Maximum sentence length to consider
+    corpus = os.path.join("data", corpus_name)
     # Define path to new file
     datafile = os.path.join(corpus, "formatted_movie_lines.txt")
 
@@ -211,7 +212,7 @@ def main():
     voc, pairs = readVocs(datafile, corpus_name)
     print('Filter sentence pairs with MAX_LENGTH: {}'.format(MAX_LENGTH))
     filtered_pairs = filterPairs(pairs)
-    print('Filtered ratio (shorted sentense) {} / {} : {:.4f}'.format(
+    print('Filtered ratio (short sentense) {} / {} : {:.4f}'.format(
         len(filtered_pairs), len(pairs), len(filtered_pairs) / len(pairs)
     ))
     print('Put word into object')

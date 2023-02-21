@@ -113,13 +113,13 @@ def batch2TrainData(voc, pair_batch):
     for pair in pair_batch:
         input_batch.append(pair[0])
         output_batch.append(pair[1])
-        input_tensor, input_length = inputVar(input_batch, voc)
-        output_tensor, output_mask, output_max_length = outputVar(output_batch, voc)
-        return input_tensor, input_length, output_tensor, output_mask, output_max_length
+    input_tensor, input_length = inputVar(input_batch, voc)
+    output_tensor, output_mask, output_max_length = outputVar(output_batch, voc)
+    return input_tensor, input_length, output_tensor, output_mask, output_max_length
 
 def main():
-    
     corpus_name = "movie-corpus"
+    corpus = os.path.join("data", corpus_name)
     MAX_LENGTH = 10  # Maximum sentence length to consider
     # Define path to new file
     datafile = os.path.join(corpus, "formatted_movie_lines.txt")
