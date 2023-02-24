@@ -19,9 +19,11 @@ from model_build import *
 from model_train import *
 from model_eval import *
 
+from config.config import *
 
 def main():
 
+    print("\nchecking device..")
     USE_CUDA = torch.cuda.is_available()
     device = torch.device("cuda" if USE_CUDA else "cpu")    
     # take a look on the data 
@@ -29,6 +31,7 @@ def main():
     corpus_name = "movie-corpus"
     corpus = os.path.join("data", corpus_name)
 
+    print("\nchecking some samples in utterances.jsonl..")
     printLines(os.path.join(corpus, "utterances.jsonl"))
 
     # Define path to new file
@@ -60,7 +63,7 @@ def main():
     voc, pairs = readVocs(datafile, corpus_name)
     MAX_LENGTH = 10 # Maximum sentence length to consider
     print('Filter sentence pairs with MAX_LENGTH: {}'.format(MAX_LENGTH))
-    filtered_pairs = filterPairs(pairs)
+    filtered_pairs = filterPairs(pairs, MAX_LENGTH)
     print('Filtered ratio (short sentense) {} / {} : {:.4f}'.format(
         len(filtered_pairs), len(pairs), len(filtered_pairs) / len(pairs)
     ))
@@ -78,8 +81,8 @@ def main():
     ))
 
     # Print some pairs to validate
-    print("\npairs:")
-    for pair in pairs[:10]:
+    print("\nchecking some trimmed pairs:")
+    for pair in trimmed_pairs[:10]:
         print(pair)  
 
     # Example for validation
@@ -88,6 +91,7 @@ def main():
 
     input_variable, lengths, target_variable, mask, max_target_len = batches
 
+    print("\nchecking training data:")
     print("input_variable:", input_variable)
     print("lengths:", lengths)
     print("target_variable:", target_variable)
@@ -95,6 +99,7 @@ def main():
     print("max_target_len:", max_target_len)
 
     # Configure models
+    print("\nconfiguring the model:")
     model_name = 'cb_model'
     attn_model = 'dot'
     #attn_model = 'general'
@@ -105,92 +110,99 @@ def main():
     dropout = 0.1
     batch_size = 64
 
-    # Set checkpoint to load from; set to None if starting from scratch
-    loadFilename = None
-    checkpoint_iter = 4000
-    #loadFilename = os.path.join(save_dir, model_name, corpus_name,
-    #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
-    #                            '{}_checkpoint.tar'.format(checkpoint_iter))
+    # # Set checkpoint to load from; set to None if starting from scratch
+    # loadFilename = None
+    # checkpoint_iter = 4000
+    # #loadFilename = os.path.join(save_dir, model_name, corpus_name,
+    # #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
+    # #                            '{}_checkpoint.tar'.format(checkpoint_iter))
 
-        # Load model if a loadFilename is provided
-    if loadFilename:
-        # If loading on same machine the model was trained on
-        checkpoint = torch.load(loadFilename)
-        # If loading a model trained on GPU to CPU
-        #checkpoint = torch.load(loadFilename, map_location=torch.device('cpu'))
-        encoder_sd = checkpoint['en']
-        decoder_sd = checkpoint['de']
-        encoder_optimizer_sd = checkpoint['en_opt']
-        decoder_optimizer_sd = checkpoint['de_opt']
-        embedding_sd = checkpoint['embedding']
-        voc.__dict__ = checkpoint['voc_dict']
+    #     # Load model if a loadFilename is provided
+    # if loadFilename:
+    #     # If loading on same machine the model was trained on
+    #     checkpoint = torch.load(loadFilename)
+    #     # If loading a model trained on GPU to CPU
+    #     #checkpoint = torch.load(loadFilename, map_location=torch.device('cpu'))
+    #     encoder_sd = checkpoint['en']
+    #     decoder_sd = checkpoint['de']
+    #     encoder_optimizer_sd = checkpoint['en_opt']
+    #     decoder_optimizer_sd = checkpoint['de_opt']
+    #     embedding_sd = checkpoint['embedding']
+    #     voc.__dict__ = checkpoint['voc_dict']
     
-    print('Building encoder and decoder ...')
-    # Initialize word embeddings
-    embedding = nn.Embedding(Voc.num_words, hidden_size)
-    if loadFilename:
-        embedding.load_state_dict(embedding_sd)
-    # Initialize encoder & decoder models
+    # print('Building encoder and decoder ...')
+    # # Initialize word embeddings
+    embedding = nn.Embedding(voc.num_words, hidden_size)
+    # if loadFilename:
+    #     embedding.load_state_dict(embedding_sd)
+    # # Initialize encoder & decoder models
+    # encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
+    # decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
+    # if loadFilename:
+    #     encoder.load_state_dict(encoder_sd)
+    #     decoder.load_state_dict(decoder_sd)
+    # # Use appropriate device
+    # encoder = encoder.to(device)
+    # decoder = decoder.to(device)
+    # print('Models built and ready to go!')
+
+    # # Configure training/optimization
+    # clip = 50.0
+    # teacher_forcing_ratio = 1.0
+    # learning_rate = 0.0001
+    # decoder_learning_ratio = 5.0
+    # n_iteration = 4000
+    # print_every = 250
+    # save_every = 500
+
+    # # Ensure dropout layers are in train mode
+    # encoder.train()
+    # decoder.train()
+
+    # # Initialize optimizers
+    # print('Building optimizers ...')
+    # encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
+    # decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate * decoder_learning_ratio)
+    # if loadFilename:
+    #     encoder_optimizer.load_state_dict(encoder_optimizer_sd)
+    #     decoder_optimizer.load_state_dict(decoder_optimizer_sd)
+
+    # # If you have cuda, configure cuda to call
+    # for state in encoder_optimizer.state.values():
+    #     for k, v in state.items():
+    #         if isinstance(v, torch.Tensor):
+    #             state[k] = v.cuda()
+
+    # for state in decoder_optimizer.state.values():
+    #     for k, v in state.items():
+    #         if isinstance(v, torch.Tensor):
+    #             state[k] = v.cuda()
+    # print("\nmodel training..!")
+    # # Run training iterations
+    # model_train(model_name, voc, trimmed_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
+    #             embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
+    #             print_every, save_every, hidden_size, clip, corpus_name, loadFilename, device, teacher_forcing_ratio)
+
     encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
     decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
-    if loadFilename:
-        encoder.load_state_dict(encoder_sd)
-        decoder.load_state_dict(decoder_sd)
+    
+    # Load model
+    checkpoint = torch.load('data/save/cb_model/movie-corpus/2-2_500/4000_checkpoint.tar', map_location=torch.device('cpu'))
+    encoder.load_state_dict(checkpoint['en'])
+    decoder.load_state_dict(checkpoint['de'])
     # Use appropriate device
     encoder = encoder.to(device)
     decoder = decoder.to(device)
-    print('Models built and ready to go!')
-
-    # Configure training/optimization
-    clip = 50.0
-    teacher_forcing_ratio = 1.0
-    learning_rate = 0.0001
-    decoder_learning_ratio = 5.0
-    n_iteration = 4000
-    print_every = 1
-    save_every = 500
-
-    # Ensure dropout layers are in train mode
-    encoder.train()
-    decoder.train()
-
-    # Initialize optimizers
-    print('Building optimizers ...')
-    encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
-    decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate * decoder_learning_ratio)
-    if loadFilename:
-        encoder_optimizer.load_state_dict(encoder_optimizer_sd)
-        decoder_optimizer.load_state_dict(decoder_optimizer_sd)
-
-    # If you have cuda, configure cuda to call
-    for state in encoder_optimizer.state.values():
-        for k, v in state.items():
-            if isinstance(v, torch.Tensor):
-                state[k] = v.cuda()
-
-    for state in decoder_optimizer.state.values():
-        for k, v in state.items():
-            if isinstance(v, torch.Tensor):
-                state[k] = v.cuda()
-
-    # Run training iterations
-    model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
-                embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
-                print_every, save_every, clip, corpus_name, loadFilename, device, teacher_forcing_ratio)
-
-    # Use appropriate device
-    encoder = encoder.to(device)
-    decoder = decoder.to(device)
-
+  
     # Set dropout layers to eval mode
     encoder.eval()
     decoder.eval()
-
+    print("model evaluation..!")
     # Initialize search module
     searcher = GreedySearchDecoderEvaluation(encoder, decoder)
-
+    print("start chatting!")
     # Begin chatting (uncomment and run the following line to begin)
-    evaluateInput(encoder, decoder, searcher, voc)
+    evaluateInput(searcher, voc, config.device)
 
 if __name__ == "__main__":
     main()

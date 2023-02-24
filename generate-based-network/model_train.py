@@ -8,6 +8,7 @@ from model_build import LuongAttnDecoderRNN, EncoderRNN
 from data_cleaning import Voc
 
 from text_to_matrix import batch2TrainData
+from config.config import config
 
 import torch
 import torch.nn as nn
@@ -15,7 +16,7 @@ from torch import optim
 import random
 import os
 
-def maskNLLLoss(inp, target, mask):
+def maskNLLLoss(inp, target, mask, device):
     """   
     define the loss function for the model, the loss is calculated by the cross entropy loss with the padding mask
     
@@ -23,6 +24,7 @@ def maskNLLLoss(inp, target, mask):
     - inp: (max_length, batch_size)
     - target: (max_length, batch_size)
     - mask: (max_length, batch_size)
+    - device: str, device to run the model
 
     Returns
     - loss: tensor, loss of the model
@@ -36,7 +38,7 @@ def maskNLLLoss(inp, target, mask):
 
 def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer, 
                 embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size, 
-                print_every, save_every, clip, corpus_name, loadFilename):
+                print_every, save_every, hidden_size, clip, corpus_name, loadFilename, device, teacher_forcing_ratio=1.0):
     """   
     model train pipeline
     
@@ -56,9 +58,12 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
     - batch_size: int, batch size
     - print_every: int, print loss every n iteration
     - save_every: int, save model every n iteration
+    - hidden_size: int, hidden size of the model
     - clip: float, gradient clipping
     - corpus_name: str, name of the corpus
     - loadFilename: str, name of the model to load
+    - device: str, device to run the model
+    - teacher_forcing_ratio: float, ratio of teacher forcing
 
     Returns
     """
@@ -83,7 +88,7 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
         #                 embedding, encoder_optimizer, decoder_optimizer, batch_size, clip)
         input_tensor, output_tensor = input_tensor.to(device), output_tensor.to(device)
         mask = output_mask.to(device)
-        input_length = input_length.to(device)
+        input_length = input_length.to("cpu")
 
         temp_loss = 0
         print_losses = []
@@ -93,7 +98,7 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
         encoder_outputs, encoder_hidden = encoder(input_tensor, input_length)
 
         # create initial decoder input (start with SOS tokens for each sentence)
-        decoder_input = torch.LongTensor([[SOS_token for _ in range(batch_size)]])
+        decoder_input = torch.LongTensor([[0 for _ in range(batch_size)]])
         decoder_input = decoder_input.to(device)
 
         # set initial decoder hidden state to the encoder's final hidden state
@@ -109,7 +114,7 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 # Teacher forcing: next input is current target
                 decoder_input = output_tensor[t].view(1, -1)
                 # Calculate and accumulate loss per word in the batch
-                mask_loss, nTotal = maskNLLLoss(decoder_output, output_tensor[t], mask[t])
+                mask_loss, nTotal = maskNLLLoss(decoder_output, output_tensor[t], mask[t], device)
                 temp_loss += mask_loss
                 print_losses.append(mask_loss.item() * nTotal)
                 n_totals += nTotal
@@ -121,19 +126,20 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
                 decoder_input = decoder_input.to(device)
                 # Calculate and accumulate loss per word in the batch
-                mask_loss, nTotal = maskNLLLoss(decoder_output, output_tensor[t], mask[t])
+                mask_loss, nTotal = maskNLLLoss(decoder_output, output_tensor[t], mask[t], device)
                 temp_loss += mask_loss
                 print_losses.append(mask_loss.item() * nTotal)
                 n_totals += nTotal
         
+        loss = temp_loss
         loss.backward()
 
         # Clip gradients: gradients are modified in place
         _ = nn.utils.clip_grad_norm_(encoder.parameters(), clip)
         _ = nn.utils.clip_grad_norm_(decoder.parameters(), clip)
 
-        encoder.optimizer.step()
-        decoder.optimizer.step()
+        encoder_optimizer.step()
+        decoder_optimizer.step()
 
         # Keep track of loss
         loss = temp_loss / n_totals
@@ -162,6 +168,7 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 'embedding': embedding.state_dict()
             }, os.path.join(directory, '{}_{}.tar'.format(iteration, 'checkpoint')))
 
+            print("Model is saved!")
 def main():
     model_name = 'cb_model'
     attn_model = 'dot'
@@ -244,7 +251,7 @@ def main():
     # Run training iterations
     model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
                 embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
-                print_every, save_every, clip, corpus_name, loadFilename)
+                print_every, save_every, clip, corpus_name, loadFilename, device, teacher_forcing_ratio)
 
 
 if __name__ == '__main__':

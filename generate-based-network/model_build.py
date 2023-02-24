@@ -19,6 +19,11 @@ class EncoderRNN(nn.Module):
     
     def forward(self, input_seq, input_lengths, hidden = None):
         """   
+        Input:
+        - input_seq: tensor, (max_length, batch_size)
+        - input_lengths: torch int, (batch_size)
+        - hidden: int, hidden state of the GRU
+
         return shape:
         - outputs: (max_length, batch_size, hidden states)
         - hidden: (n_layer, num_directions, batch_size, hidden_size)

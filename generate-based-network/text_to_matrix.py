@@ -108,7 +108,7 @@ def batch2TrainData(voc, pair_batch):
     Returns:
     - input_tensor, input_length, output_tensor, output_mask, output_max_length: param of all above funcs
     """
-    pair_batch.sort(key = lambda x: len(x[0].split(" ")), reversed = True)
+    pair_batch.sort(key = lambda x: len(x[0].split(" ")), reverse = True)
     input_batch, output_batch = [], []
     for pair in pair_batch:
         input_batch.append(pair[0])
