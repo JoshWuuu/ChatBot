@@ -18,11 +18,13 @@ from text_to_matrix import *
 from model_build import *
 from model_train import *
 from model_eval import *
+from argparse import ArgumentParser
 
-from config.config import *
+import config
 
 def main():
-
+    
+    parser = ArgumentParser()
     print("\nchecking device..")
     USE_CUDA = torch.cuda.is_available()
     device = torch.device("cuda" if USE_CUDA else "cpu")    
