@@ -3,18 +3,21 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from model_build import LuongAttnDecoderRNN, EncoderRNN
-
-from data_cleaning import Voc
-
-from text_to_matrix import batch2TrainData
-from config.config import config
-
+import numpy as np
+import csv
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch import optim
 import random
 import os
+import matplotlib
+matplotlib.use('TkAgg')
+
+from model_build import LuongAttnDecoderRNN, EncoderRNN
+from data_cleaning import Voc
+from text_to_matrix import batch2TrainData
+import config
 
 def maskNLLLoss(inp, target, mask, device):
     """   
@@ -169,6 +172,49 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
             }, os.path.join(directory, '{}_{}.tar'.format(iteration, 'checkpoint')))
 
             print("Model is saved!")
+        
+    print('save the result!')
+    algorithm = '{}-{}_{}'.format(encoder_n_layers,
+                                  decoder_n_layers, hidden_size)
+    os.makedirs('results', exist_ok=True)
+    with open(f'results/{algorithm}.csv', 'w') as f:
+        csv.writer(f).writerows(loss_list)
+
+    plot_result()
+
+def plot_result():
+    """
+    plot the loss of each algorithm
+    """
+    loss_list = []
+    for filename in os.listdir('results'):
+        if filename.endswith('.csv'):
+            algorithm = filename.split('.')[0]
+            with open(os.path.join('results', filename), 'r') as f:
+                loss_list.append(
+                    (algorithm, np.array(list(csv.reader(f))).astype('float64').squeeze())
+                )
+
+    plt.xlabel("Iterations(conversation)")
+    plt.ylabel("Average loss")
+    legend = []
+    for name, values in loss_list:
+        legend.append(name)
+        plt.plot(values[10:])
+    plt.ylim(0.0, 1.0)
+    plt.legend(legend)
+    plt.savefig(os.path.join('results', 'loss_plot.png'))
+
+def test1():
+    print('save the result!')
+    algorithm = '{}-{}_{}'.format(1, 1, 20)
+    os.makedirs('results', exist_ok=True)
+    with open(f'results/{algorithm}.csv', 'w') as f:
+        for i in [0.1,1,0.5,0.2,0.4,0.5,0.6,0.2,0.3]:
+            csv.writer(f).writerow([i])
+    
+    plot_result()
+
 def main():
     model_name = 'cb_model'
     attn_model = 'dot'
@@ -255,4 +301,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    test1()
