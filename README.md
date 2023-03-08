@@ -9,7 +9,13 @@ This part is using DNN to classify the sentiment of the input and use the sentim
 Reference: https://www.projectpro.io/article/python-chatbot-project-learn-to-build-a-chatbot-from-scratch/429
 
 ## Generative-based Network
-This part is using seq2seq model. The encoder-decoder network is built with att layers. The embedding layers is learned with the network. The model is built using pytorch. The result is still not good. The future direction includes using different pre-trained network (transformer) and the pre-trained embedding layers, and also might be interesting to experiment different trimmed ratio (rare words) and the filter ratio (short sentence). \
+This part is using seq2seq model. The encoder-decoder network is built with att layers. The embedding layers is learned with the network. The model is built using pytorch. The result is still not good. The future direction includes:
+* Pre-trained embedding layers
+* Normalization: batch norm, layer norm
+* Activation function: ReLu, GeLu 
+* Attention layer: dot, general, concate
+* Model: GRU, LSTM, Transformer
+* Model tuning: lr or batch size exploration
 Reference: https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
 
 ## ChatGPT

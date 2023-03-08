@@ -245,7 +245,8 @@ class LuongAttnDecoderLSTM(nn.Module):
         output = F.softmax(output, dim=1)
         # Return output and final hidden state
         return output, hidden
-    
+
+
 
 def main():
     pass

@@ -112,78 +112,69 @@ def main():
     dropout = 0.1
     batch_size = 64
 
-    # # Set checkpoint to load from; set to None if starting from scratch
-    # loadFilename = None
-    # checkpoint_iter = 4000
-    # #loadFilename = os.path.join(save_dir, model_name, corpus_name,
-    # #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
-    # #                            '{}_checkpoint.tar'.format(checkpoint_iter))
+    # Set checkpoint to load from; set to None if starting from scratch
+    loadFilename = None
+    checkpoint_iter = 4000
+    #loadFilename = os.path.join(save_dir, model_name, corpus_name,
+    #                            '{}-{}_{}'.format(encoder_n_layers, decoder_n_layers, hidden_size),
+    #                            '{}_checkpoint.tar'.format(checkpoint_iter))
 
-    #     # Load model if a loadFilename is provided
-    # if loadFilename:
-    #     # If loading on same machine the model was trained on
-    #     checkpoint = torch.load(loadFilename)
-    #     # If loading a model trained on GPU to CPU
-    #     #checkpoint = torch.load(loadFilename, map_location=torch.device('cpu'))
-    #     encoder_sd = checkpoint['en']
-    #     decoder_sd = checkpoint['de']
-    #     encoder_optimizer_sd = checkpoint['en_opt']
-    #     decoder_optimizer_sd = checkpoint['de_opt']
-    #     embedding_sd = checkpoint['embedding']
-    #     voc.__dict__ = checkpoint['voc_dict']
+        # Load model if a loadFilename is provided
+    if loadFilename:
+        # If loading on same machine the model was trained on
+        checkpoint = torch.load(loadFilename)
+        # If loading a model trained on GPU to CPU
+        #checkpoint = torch.load(loadFilename, map_location=torch.device('cpu'))
+        encoder_sd = checkpoint['en']
+        decoder_sd = checkpoint['de']
+        encoder_optimizer_sd = checkpoint['en_opt']
+        decoder_optimizer_sd = checkpoint['de_opt']
+        embedding_sd = checkpoint['embedding']
+        voc.__dict__ = checkpoint['voc_dict']
     
-    # print('Building encoder and decoder ...')
-    # # Initialize word embeddings
-    embedding = nn.Embedding(voc.num_words, hidden_size)
-    # if loadFilename:
-    #     embedding.load_state_dict(embedding_sd)
-    # # Initialize encoder & decoder models
-    # encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
-    # decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
-    # if loadFilename:
-    #     encoder.load_state_dict(encoder_sd)
-    #     decoder.load_state_dict(decoder_sd)
-    # # Use appropriate device
-    # encoder = encoder.to(device)
-    # decoder = decoder.to(device)
-    # print('Models built and ready to go!')
+    print('Building encoder and decoder ...')
+    # Initialize word embeddings
+    embedding = nn.Embedding(voc.num_words, config.hidden_size)
+    if loadFilename:
+        embedding.load_state_dict(embedding_sd)
+    # Initialize encoder & decoder models
+    encoder = EncoderRNN(config.hidden_size, embedding, config.encoder_n_layers, config.dropout)
+    decoder = LuongAttnDecoderRNN(config.attn_model, embedding, config.hidden_size, voc.num_words, config.decoder_n_layers, config.dropout)
+    if loadFilename:
+        encoder.load_state_dict(encoder_sd)
+        decoder.load_state_dict(decoder_sd)
+    # Use appropriate device
+    encoder = encoder.to(device)
+    decoder = decoder.to(device)
+    print('Models built and ready to go!')
 
-    # # Configure training/optimization
-    # clip = 50.0
-    # teacher_forcing_ratio = 1.0
-    # learning_rate = 0.0001
-    # decoder_learning_ratio = 5.0
-    # n_iteration = 4000
-    # print_every = 250
-    # save_every = 500
+    # Ensure dropout layers are in train mode
+    encoder.train()
+    decoder.train()
 
-    # # Ensure dropout layers are in train mode
-    # encoder.train()
-    # decoder.train()
+    # Initialize optimizers
+    print('Building optimizers ...')
+    encoder_optimizer = optim.Adam(encoder.parameters(), lr=config.learning_rate)
+    decoder_optimizer = optim.Adam(decoder.parameters(), lr=config.learning_rate * config.decoder_learning_ratio)
+    if loadFilename:
+        encoder_optimizer.load_state_dict(encoder_optimizer_sd)
+        decoder_optimizer.load_state_dict(decoder_optimizer_sd)
 
-    # # Initialize optimizers
-    # print('Building optimizers ...')
-    # encoder_optimizer = optim.Adam(encoder.parameters(), lr=learning_rate)
-    # decoder_optimizer = optim.Adam(decoder.parameters(), lr=learning_rate * decoder_learning_ratio)
-    # if loadFilename:
-    #     encoder_optimizer.load_state_dict(encoder_optimizer_sd)
-    #     decoder_optimizer.load_state_dict(decoder_optimizer_sd)
+    # If you have cuda, configure cuda to call
+    for state in encoder_optimizer.state.values():
+        for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+                state[k] = v.cuda()
 
-    # # If you have cuda, configure cuda to call
-    # for state in encoder_optimizer.state.values():
-    #     for k, v in state.items():
-    #         if isinstance(v, torch.Tensor):
-    #             state[k] = v.cuda()
-
-    # for state in decoder_optimizer.state.values():
-    #     for k, v in state.items():
-    #         if isinstance(v, torch.Tensor):
-    #             state[k] = v.cuda()
-    # print("\nmodel training..!")
-    # # Run training iterations
-    # model_train(model_name, voc, trimmed_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
-    #             embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
-    #             print_every, save_every, hidden_size, clip, corpus_name, loadFilename, device, teacher_forcing_ratio)
+    for state in decoder_optimizer.state.values():
+        for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+                state[k] = v.cuda()
+    print("\nmodel training..!")
+    # Run training iterations
+    model_train(config.model_name, voc, trimmed_pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
+                embedding, config.encoder_n_layers, config.decoder_n_layers, save_dir, config.n_iteration, config.batch_size,
+                config.print_every, config.save_every, config.hidden_size, config.clip, corpus_name, loadFilename, device, config.teacher_forcing_ratio)
 
     encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
     decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)

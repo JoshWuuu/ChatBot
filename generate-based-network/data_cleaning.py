@@ -7,6 +7,7 @@ import re
 import os
 import unicodedata
 from io import open
+from nltk.stem import WordNetLemmatizer
 
 PAD_token = 0  # Used for padding short sentences
 SOS_token = 1  # Start-of-sentence token
@@ -115,9 +116,10 @@ def normalizeString(s):
     """
     # strip remove all the leading and trailing space 
     s = unicodeToAscii(s.lower().strip())
-    s = re.sub(r"([.!?])", r" \1", s)
-    s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
-    s = re.sub(r"\s+", r" ", s).strip()
+    s = re.compile("[.;:!\'?,\"()\[\]]").sub("", s) # remove punctuation
+    s = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)").sub(" ", s) # remove punctuation
+    lemmatizer = WordNetLemmatizer()
+    s = ' '.join([lemmatizer.lemmatize(word) for word in s.split()])
     return s
 
 def readVocs(datafile, corpus_name):

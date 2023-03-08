@@ -13,6 +13,8 @@ import random
 import os
 import matplotlib
 matplotlib.use('TkAgg')
+# from nltk.translate.bleu_score import corpus_bleu
+from torchtext.data.metrics import bleu_score
 
 from model_build import LuongAttnDecoderRNN, EncoderRNN
 from data_cleaning import Voc
@@ -79,16 +81,18 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
     acc_loss = 0
     if loadFilename:
         start_iter = checkpoint['iteration'] + 1
-    
+    predicted_corpus = []
+    target_corpus = []
+
     print("Training...")
     for iteration in range(start_iter, n_iteration + 1):
         training_batch = training_batches[iteration - 1]
         # Extract fields from batch
         input_tensor, input_length, output_tensor, output_mask, output_max_length = training_batch
 
+        predicted_corpus_temp = np.zeros((batch_size, output_max_length))
+        target_corpus_temp = np.zeros((batch_size, output_max_length))
         # Run the train function
-        # loss = train(input_tensor, input_length, output_tensor, output_mask, output_max_length, encoder, decoder,
-        #                 embedding, encoder_optimizer, decoder_optimizer, batch_size, clip)
         input_tensor, output_tensor = input_tensor.to(device), output_tensor.to(device)
         mask = output_mask.to(device)
         input_length = input_length.to("cpu")
@@ -115,7 +119,13 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
             for t in range(output_max_length):
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
                 # Teacher forcing: next input is current target
+                _, topi = decoder_output.topk(1)
                 decoder_input = output_tensor[t].view(1, -1)
+                print(topi)
+                predicted_corpus_temp.append(topi)
+                print(decoder_output.shape, decoder_output)
+                print(output_tensor[t].shape, output_tensor[t])
+                target_corpus_temp.append(output_tensor[t])
                 # Calculate and accumulate loss per word in the batch
                 mask_loss, nTotal = maskNLLLoss(decoder_output, output_tensor[t], mask[t], device)
                 temp_loss += mask_loss
@@ -126,6 +136,11 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
                 # No teacher forcing: next input is decoder's own current output
                 _, topi = decoder_output.topk(1)
+                # print(topi)
+                predicted_corpus_temp[:, t] = topi.squeeze().detach().cpu().numpy()
+                # print(decoder_output.shape, decoder_output)
+                # print(output_tensor[t].shape, output_tensor[t])
+                target_corpus_temp[:, t] = output_tensor[t].squeeze().detach().cpu().numpy(dtype=int)
                 decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
                 decoder_input = decoder_input.to(device)
                 # Calculate and accumulate loss per word in the batch
@@ -133,10 +148,24 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 temp_loss += mask_loss
                 print_losses.append(mask_loss.item() * nTotal)
                 n_totals += nTotal
-        
+
+        print(output_tensor)
+        print(predicted_corpus_temp)
+        print(target_corpus_temp)
+        predicted_corpus_temp = indexToWord(predicted_corpus_temp, voc)
+        target_corpus_temp = indexToWord(target_corpus_temp, voc)
+        print(predicted_corpus_temp)
+        print(target_corpus_temp)
+
+        predicted_corpus += predicted_corpus_temp
+        target_corpus.append(target_corpus_temp)
+
+        print(predicted_corpus)
+        print(target_corpus)
+
         loss = temp_loss
         loss.backward()
-
+        break
         # Clip gradients: gradients are modified in place
         _ = nn.utils.clip_grad_norm_(encoder.parameters(), clip)
         _ = nn.utils.clip_grad_norm_(decoder.parameters(), clip)
@@ -182,6 +211,21 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
 
     plot_result()
 
+def indexToWord(index_list, voc):
+    """
+    convert the index to word
+    Inputs:
+    - index_list: list, the list of index
+    """
+    res = []
+    for ind_lis in index_list:
+        temp = []
+        for index in ind_lis:
+            if index not in [0, 1, 2]:
+                temp.append(voc.index2word[index])
+        res.append(temp)
+    return res
+
 def plot_result():
     """
     plot the loss of each algorithm
@@ -206,6 +250,14 @@ def plot_result():
     plt.savefig(os.path.join('results', 'loss_plot.png'))
 
 def test1():
+    predicted_words = [['My', 'full', 'pytorch', 'test'], ['My', 'full', 'pytorch', 'test']]
+    # target sentence need to be a list of list
+    target_words = [[['My', 'full', 'pytorch', 'test']], [['My', 'full', 'pytorch', 'test']]]
+    print(bleu_score(predicted_words, target_words))
+    assert bleu_score(predicted_words, target_words) == 1.0, "test1 failed"
+    print("test1 passed!")
+
+def test2():
     print('save the result!')
     algorithm = '{}-{}_{}'.format(1, 1, 20)
     os.makedirs('results', exist_ok=True)
