@@ -79,10 +79,12 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
     print("Initializing ...")
     start_iter = 1
     acc_loss = 0
-    if loadFilename:
-        start_iter = checkpoint['iteration'] + 1
+    loss_list = []
     predicted_corpus = []
     target_corpus = []
+    bleu_score_list = []
+    if loadFilename:
+        start_iter = checkpoint['iteration'] + 1
 
     print("Training...")
     for iteration in range(start_iter, n_iteration + 1):
@@ -140,7 +142,7 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 predicted_corpus_temp[:, t] = topi.squeeze().detach().cpu().numpy()
                 # print(decoder_output.shape, decoder_output)
                 # print(output_tensor[t].shape, output_tensor[t])
-                target_corpus_temp[:, t] = output_tensor[t].squeeze().detach().cpu().numpy(dtype=int)
+                target_corpus_temp[:, t] = output_tensor[t].squeeze().detach().cpu().numpy().astype(int)
                 decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
                 decoder_input = decoder_input.to(device)
                 # Calculate and accumulate loss per word in the batch
@@ -149,23 +151,14 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
                 print_losses.append(mask_loss.item() * nTotal)
                 n_totals += nTotal
 
-        print(output_tensor)
-        print(predicted_corpus_temp)
-        print(target_corpus_temp)
         predicted_corpus_temp = indexToWord(predicted_corpus_temp, voc)
         target_corpus_temp = indexToWord(target_corpus_temp, voc)
-        print(predicted_corpus_temp)
-        print(target_corpus_temp)
-
         predicted_corpus += predicted_corpus_temp
-        target_corpus.append(target_corpus_temp)
-
-        print(predicted_corpus)
-        print(target_corpus)
+        target_corpus += target_corpus_temp
 
         loss = temp_loss
         loss.backward()
-        break
+
         # Clip gradients: gradients are modified in place
         _ = nn.utils.clip_grad_norm_(encoder.parameters(), clip)
         _ = nn.utils.clip_grad_norm_(decoder.parameters(), clip)
@@ -183,6 +176,9 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
             print_loss_avg = acc_loss / print_every
             print("Iteration: {}; Percent complete: {:.1f}%; Average loss: {:.4f}".format(iteration, iteration / n_iteration * 100, print_loss_avg))
             acc_loss = 0
+            loss_list.append(print_loss_avg)
+            bleu_s = bleu_score(predicted_corpus, target_corpus)
+            bleu_score_list.append(bleu_s)
         
         # Save checkpoint
         if (iteration % save_every == 0):
@@ -203,15 +199,20 @@ def model_train(model_name, voc, pairs, encoder, decoder, encoder_optimizer, dec
             print("Model is saved!")
         
     print('save the result!')
-    algorithm = '{}-{}_{}'.format(encoder_n_layers,
+    algorithm = '{}-{}-{}_{}'.format(model_name, encoder_n_layers,
                                   decoder_n_layers, hidden_size)
-    os.makedirs('results', exist_ok=True)
-    with open(f'results/{algorithm}.csv', 'w') as f:
-        csv.writer(f).writerows(loss_list)
+    os.makedirs(config.result_dir, exist_ok=True)
+    with open(f'{config.result_dir}/{algorithm}_loss.csv', 'w') as f:
+        for loss in loss_list:
+            csv.writer(f).writerow([loss.item()])
+    
+    with open(f'{config.result_dir}/{algorithm}_bleu_score.csv', 'w') as f:
+        for bleu_s in bleu_score_list:
+            csv.writer(f).writerow([bleu_s.item()])
 
     plot_result()
 
-def indexToWord(index_list, voc):
+def indexToWord(index_list, voc, type='predict'):
     """
     convert the index to word
     Inputs:
@@ -223,7 +224,10 @@ def indexToWord(index_list, voc):
         for index in ind_lis:
             if index not in [0, 1, 2]:
                 temp.append(voc.index2word[index])
-        res.append(temp)
+        if type == 'predict':
+            res.append(temp)
+        else:
+            res.append([temp])
     return res
 
 def plot_result():
@@ -231,14 +235,21 @@ def plot_result():
     plot the loss of each algorithm
     """
     loss_list = []
-    for filename in os.listdir('results'):
-        if filename.endswith('.csv'):
+    bleu_score_list = []
+    for filename in os.listdir(config.result_dir):
+        if filename.endswith('loss.csv'):
             algorithm = filename.split('.')[0]
-            with open(os.path.join('results', filename), 'r') as f:
+            with open(os.path.join(config.result_dir, filename), 'r') as f:
                 loss_list.append(
                     (algorithm, np.array(list(csv.reader(f))).astype('float64').squeeze())
                 )
-
+        
+        if filename.endswith('bleu_score.csv'):
+            algorithm = filename.split('.')[0]
+            with open(os.path.join(config.result_dir, filename), 'r') as f:
+                bleu_score_list.append(
+                    (algorithm, np.array(list(csv.reader(f))).astype('float64').squeeze())
+                )
     plt.xlabel("Iterations(conversation)")
     plt.ylabel("Average loss")
     legend = []
@@ -248,6 +259,17 @@ def plot_result():
     plt.ylim(0.0, 1.0)
     plt.legend(legend)
     plt.savefig(os.path.join('results', 'loss_plot.png'))
+    plt.close()
+
+    plt.xlabel("Iterations(conversation)")
+    plt.ylabel("Blue score")
+    legend = []
+    for name, values in bleu_score_list:
+        legend.append(name)
+        plt.plot(values[10:])
+    plt.ylim(0.0, 1.0)
+    plt.legend(legend)
+    plt.savefig(os.path.join('results', 'bleu_plot.png'))
 
 def test1():
     predicted_words = [['My', 'full', 'pytorch', 'test'], ['My', 'full', 'pytorch', 'test']]
