@@ -1,8 +1,4 @@
-import spacy
 import torch
-
-spacy_ger = spacy.load("de")
-spacy_eng = spacy.load("en")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 load_model = False

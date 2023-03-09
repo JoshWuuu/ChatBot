@@ -3,7 +3,6 @@ import spacy
 from torchtext.data.metrics import bleu_score
 import sys
 
-
 def translate_sentence(model, sentence, german, english, device, max_length=50):
     # print(sentence)
 
