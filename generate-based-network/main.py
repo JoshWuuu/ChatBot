@@ -18,13 +18,11 @@ from text_to_matrix import *
 from model_build import *
 from model_train import *
 from model_eval import *
-from argparse import ArgumentParser
-
 import config
 
+
 def main():
-    
-    parser = ArgumentParser()
+
     print("\nchecking device..")
     USE_CUDA = torch.cuda.is_available()
     device = torch.device("cuda" if USE_CUDA else "cpu")    
@@ -102,15 +100,6 @@ def main():
 
     # Configure models
     print("\nconfiguring the model:")
-    model_name = 'cb_model'
-    attn_model = 'dot'
-    #attn_model = 'general'
-    #attn_model = 'concat'
-    hidden_size = 500
-    encoder_n_layers = 2
-    decoder_n_layers = 2
-    dropout = 0.1
-    batch_size = 64
 
     # Set checkpoint to load from; set to None if starting from scratch
     loadFilename = None
@@ -176,16 +165,16 @@ def main():
                 embedding, config.encoder_n_layers, config.decoder_n_layers, save_dir, config.n_iteration, config.batch_size,
                 config.print_every, config.save_every, config.hidden_size, config.clip, corpus_name, loadFilename, device, config.teacher_forcing_ratio)
 
-    encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
-    decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
+    # encoder = EncoderRNN(hidden_size, embedding, encoder_n_layers, dropout)
+    # decoder = LuongAttnDecoderRNN(attn_model, embedding, hidden_size, voc.num_words, decoder_n_layers, dropout)
     
     # Load model
-    checkpoint = torch.load('data/save/cb_model/movie-corpus/2-2_500/4000_checkpoint.tar', map_location=torch.device('cpu'))
-    encoder.load_state_dict(checkpoint['en'])
-    decoder.load_state_dict(checkpoint['de'])
-    # Use appropriate device
-    encoder = encoder.to(device)
-    decoder = decoder.to(device)
+    # checkpoint = torch.load('data/save/cb_model/movie-corpus/2-2_500/4000_checkpoint.tar')
+    # encoder.load_state_dict(checkpoint['en'])
+    # decoder.load_state_dict(checkpoint['de'])
+    # # Use appropriate device
+    # encoder = encoder.to(device)
+    # decoder = decoder.to(device)
   
     # Set dropout layers to eval mode
     encoder.eval()
@@ -195,7 +184,7 @@ def main():
     searcher = GreedySearchDecoderEvaluation(encoder, decoder)
     print("start chatting!")
     # Begin chatting (uncomment and run the following line to begin)
-    evaluateInput(searcher, voc, config.device)
+    evaluateInput(searcher, voc, device)
 
 if __name__ == "__main__":
     main()
