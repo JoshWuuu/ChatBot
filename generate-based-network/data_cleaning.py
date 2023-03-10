@@ -31,7 +31,6 @@ class PairsDataset(Dataset):
 
     def __getitem__(self, idx):
         pair = self.pairs[idx]
-        print(pair)
         input = [self.vocab[token] for token in pair[0]]
         target = [self.vocab[token] for token in pair[1]]
 
@@ -74,12 +73,12 @@ def normalizeString(s):
     s = ' '.join([lemmatizer.lemmatize(word) for word in s.split()])
     return s
 
-def readLines(datafile, corpus_name):
+def readLines(datafile):
     """
     lowercase, trim, and rm non-letter characters
         
     Input:
-    - s
+    - datafile: string, path to datafile
 
     Returns:
     - voc: obj
@@ -105,7 +104,7 @@ def tokenize_pairs(pairs):
     """
     print('Tokenizing pairs')
     # splits the file into lines
-    pairs = [[tokenize_eng(s) for s in line] for line in pairs]
+    pairs = [[['<SOS>'] + tokenize_eng(s) + ['<EOS>'] for s in line] for line in pairs]
     return pairs
 
 def vocab_from_pairs(pairs):
@@ -194,7 +193,7 @@ def main():
     datafile = os.path.join(corpus, "formatted_movie_lines.txt")
 
     print('Preparing training data')
-    pairs = readLines(datafile, corpus_name)
+    pairs = readLines(datafile)
     pairs = tokenize_pairs(pairs)
     vocab = vocab_from_pairs(pairs)
     
