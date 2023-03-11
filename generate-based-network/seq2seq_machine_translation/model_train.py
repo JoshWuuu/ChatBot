@@ -15,7 +15,7 @@ def train_fn(model, optimizer, num_epochs, train_iterator, valid_iterator, crite
     - criterion: criterion
     - clip: float, gradient clipping
     - save_model: bool, whether to save model
-    - device: device
+    - device: device3
     """
     for epoch in range(num_epochs):
         print(f"[Epoch {epoch} / {num_epochs}]")
