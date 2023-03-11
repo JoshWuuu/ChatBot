@@ -69,9 +69,9 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
             # Get input and targets and get to cuda
             inp_data = input.to(device)
             target = target.to(device)
-
+            
             # Forward prop
-            output = model(inp_data, target[:-1, :])
+            output = model(inp_data, target)
 
             # Output is of shape (trg_len, batch_size, output_dim) but Cross Entropy Loss
             # doesn't take input in that form. For example if we have MNIST we want to have
@@ -79,7 +79,7 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
             # way that we have output_words * batch_size that we want to send in into
             # our cost function, so we need to do some reshapin.
             # Let's also remove the start token while we're at it
-            output = output.reshape(-1, output.shape[2])
+            output = output[1:].reshape(-1, output.shape[2])
             target = target[1:].reshape(-1)
 
             optimizer.zero_grad()
