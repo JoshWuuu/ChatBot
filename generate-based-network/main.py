@@ -4,13 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import torch
-import torch.nn as nn
-from torch import optim
-import csv
-import random
 import os
-import codecs
-from io import open
 
 from json_preprocess import *
 from data_cleaning import *
@@ -20,7 +14,6 @@ from model_eval import *
 from config import *
 
 def main():
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     save_dir = os.path.join("data", "save")
     corpus_name = "movie-corpus"
@@ -63,6 +56,7 @@ def main():
     learning_rate = 3e-4
     batch_size = 32
 
+    model_name = 0
     # Model hyperparameters
     src_vocab_size = len(vocab)
     trg_vocab_size = len(vocab)
@@ -93,7 +87,8 @@ def main():
                               collate_fn=collate_batch)
     
     print('Training the model...')
-    model_train(model, train_dataloader, num_epochs, learning_rate, save_dir, save_model, device)
+    model_train(model_name, model, vocab, learning_rate, num_epochs, train_dataloader, save_dir,
+                corpus_name, hidden_size, device)
 
     print('Chatbot...')
     model.eval()
