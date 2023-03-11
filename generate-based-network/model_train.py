@@ -57,8 +57,10 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model, optimizer)
 
     writer = SummaryWriter("runs/loss_plot")
-    loss_list = []
+    loss_list, bleu_score_list = [], []
     step = 0
+    response_list, target_list = [], []
+
 
     for epoch in tqdm(range(num_epochs)):
         print(f"[Epoch {epoch} / {num_epochs}]")
@@ -69,10 +71,14 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
             # Get input and targets and get to cuda
             inp_data = input.to(device)
             target = target.to(device)
-            
+
             # Forward prop
             output = model(inp_data, target)
 
+            # for bleu score
+            cur_response = output.argmax(2)
+            response_list += cur_response.reshape(output.shape[1], -1).tolist()
+            target_list += target.reshape(output.shape[1], -1).tolist()
             # Output is of shape (trg_len, batch_size, output_dim) but Cross Entropy Loss
             # doesn't take input in that form. For example if we have MNIST we want to have
             # output to be: (N, 10) and targets just (N). Here we can view it in a similar
@@ -103,9 +109,11 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
         
         # score = bleu(test_data[1:100], model, german, english, device)
         mean_loss = sum(losses) / len(losses)
+        bleu_score = bleu_score(response_list, target_list, vocab)
         loss_list.append(mean_loss)
+        bleu_score_list.append(bleu_score)
         print('Train Loss: {:.4f}, Bleu Score: {:.4f}'.format(
-                     mean_loss, 0))
+                     mean_loss, bleu_score))
         
         scheduler.step(mean_loss)
         
@@ -127,30 +135,39 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
         for loss in loss_list:
             csv.writer(f).writerow([loss.item()])
     
-    # with open(f'{config.result_dir}/{algorithm}_bleu_score.csv', 'w') as f:
-    #     for bleu_s in bleu_score_list:
-    #         csv.writer(f).writerow([bleu_s.item()])
+    with open(f'{config.result_dir}/{algorithm}_bleu_score.csv', 'w') as f:
+        for bleu_s in bleu_score_list:
+            csv.writer(f).writerow([bleu_s.item()])
 
     plot_result()
     print('plot the result!')
 
-def indexToWord(index_list, voc, type='predict'):
+def calculate_bleu_score(output, target, vocab):
     """
-    convert the index to word
-    Inputs:
-    - index_list: list, the list of index
+    calculate bleu score
+
+    Input
+    - output: list, list of index
+    - target: list, list of index
+    - vocab: obj, vocab object
+
+    Returns
+    - bleu_score: float, bleu score
     """
-    res = []
-    for ind_lis in index_list:
-        temp = []
-        for index in ind_lis:
-            if index not in [0, 1, 2]:
-                temp.append(voc.index2word[index])
-        if type == 'predict':
-            res.append(temp)
-        else:
-            res.append([temp])
-    return res
+    targets = []
+    outputs = []
+
+    for i in range(len(output)):
+        for j in range(len(output[i])):
+            temp_target, temp_output = [], []
+            if output[i][j] not in [0, 1, 2, 3]:
+                indexToWord = vocab.itos[output[i][j]]
+                temp_output.append(indexToWord)
+            if target[i][j] not in [0, 1, 2, 3]:
+                indexToWord = vocab.itos[target[i][j]]
+                temp_target.append(indexToWord)
+        
+    return bleu_score(outputs, targets)
 
 def plot_result():
     """
@@ -221,8 +238,15 @@ def test2():
     
     plot_result()
 
+def test3():
+    print('test bleu score')
+    target = [[1,2,3,4,5,6,7,8,9,10], [1,2,3,4,5,6,7,8,9,10]]
+    output = [[1,2,3,4,5,6,7,8,9,10], [1,2,3,4,5,6,7,8,9,10]]
+    assert calculate_bleu_score(output, target) == 0.0, "test3 failed"
+    print("test3 passed!")
+
 def main():
     pass
 
 if __name__ == '__main__':
-    test1()
+    test3()
