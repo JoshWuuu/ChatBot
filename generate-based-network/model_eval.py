@@ -62,7 +62,7 @@ def bleu(pairs, model, vocab, device):
     """
     calculate bleu score
     Input:
-    - pairs: list, list of pairs
+    - pairs: list, list of str pairs
     - model: model object
     - vocab: vocabulary object
     - device: device
