@@ -54,7 +54,7 @@ def main():
     # Training hyperparameters
     num_epochs = 100
     learning_rate = 3e-4
-    batch_size = 32
+    batch_size = 64
 
     model_name = 0
     # Model hyperparameters
