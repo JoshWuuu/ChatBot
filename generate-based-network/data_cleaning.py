@@ -161,7 +161,7 @@ def collate_batch(batch):
     for input, target in batch:
         input_list.append(input)
         target_list.append(target)
-    return pad_sequence(input_list, padding_value=0.0), pad_sequence(target_list, padding_value=0.0)
+    return pad_sequence(input_list, padding_value=1.0), pad_sequence(target_list, padding_value=1.0)
 
 def batch_sampler_fn(pairs, batch_size):
     """
@@ -201,8 +201,7 @@ def main():
     new_stoi = vocab.stoi
     print("The index of a is", new_stoi['a'])
     new_itos = vocab.itos
-    print("The token at index 3 is", new_itos[3])
-    print('the token for different indexes', new_itos[0:150])
+    print('the token for 0:150 indexes', new_itos[0:10])
 
     pairdataset = PairsDataset(pairs, vocab)
     print("dataset[0]:", pairdataset[0])
