@@ -18,21 +18,29 @@ matplotlib.use('TkAgg')
 from torchtext.data.metrics import bleu_score
 from torch.utils.tensorboard import SummaryWriter
 
-from utils import *
 import config
 
 def model_train(model_name, model, vocab, learning_rate, num_epochs, train_iterator, save_dir, 
-                corpus_name, hidden_size, loadFilename, device, teacher_forcing_ratio, 
-                clip = 1, load_model = False, save_model = False, max_length=config.MAX_LENGTH):
+                corpus_name, hidden_size, device, clip = 1, load_model = False, 
+                save_checkpoint = False):
     """   
     model train pipeline
     
     Input
-    - model_name: model name
-    - model: model object
-    - vocab: Voc object
-
-
+    - model_name: str, model name
+    - model: obj, model object
+    - vocab: obj, vocab object
+    - learning_rate: float, learning rate
+    - num_epochs: int, number of epochs
+    - train_iterator: obj, train iterator
+    - save_dir: str, save directory
+    - corpus_name: str, corpus name
+    - hidden_size: int, hidden size
+    - device: obj, device object
+    - clip: int, clip, default 1
+    - load_model: bool, load model, default False
+    - save_checkpoint: bool, save checkpoint, default False
+    
     Returns
     """
 
@@ -50,6 +58,7 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
 
     writer = SummaryWriter("runs/loss_plot")
     loss_list = []
+    step = 0
 
     for epoch in tqdm(range(num_epochs)):
         print(f"[Epoch {epoch} / {num_epochs}]")
