@@ -61,8 +61,8 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
     step = 0
     response_list, target_list = [], []
 
-
-    for epoch in tqdm(range(num_epochs)):
+    loop = tqdm(range(num_epochs))
+    for epoch in loop:
         print(f"[Epoch {epoch} / {num_epochs}]")
 
         losses = []
@@ -112,8 +112,7 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
         bleu_s = calculate_bleu_score(response_list, target_list, vocab)
         loss_list.append(mean_loss)
         bleu_score_list.append(bleu_s)
-        print('Train Loss: {:.4f}, Bleu Score: {:.4f}'.format(
-                     mean_loss, bleu_s))
+        loop.set_postfix(loss=mean_loss, bleu_score=bleu_s)
         
         scheduler.step(mean_loss)
         
