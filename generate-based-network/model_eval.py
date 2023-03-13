@@ -31,7 +31,7 @@ def generate_response(model, sentence, vocab, device, max_length=50):
     # convert to tensor
     indexes = textToIndex(tokens, vocab)
     # Convert to Tensor
-    sentence_tensor = torch.LongTensor(indexes).unsqueeze(0).unsqueeze(1).to(device)
+    sentence_tensor = torch.LongTensor(indexes).unsqueeze(1).to(device)
 
     # Build encoder hidden, cell state
     with torch.no_grad():
