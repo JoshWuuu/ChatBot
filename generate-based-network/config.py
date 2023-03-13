@@ -1,14 +1,14 @@
 import torch
 
-result_dir = 'results/attention'
+result_dir = 'results/model_structure'
 
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 
 # Default word tokens
 PAD_token = 0  # Used for padding short sentences
-SOS_token = 1  # Start-of-sentence token
-EOS_token = 2  # End-of-sentence token
+# SOS_token = 1  # Start-of-sentence token
+# EOS_token = 2  # End-of-sentence token
 
 corpus_name = "movie-corpus"
 MAX_LENGTH = 10  # Maximum sentence length to consider
@@ -23,14 +23,14 @@ hidden_size = 500
 encoder_n_layers = 2
 decoder_n_layers = 2
 dropout = 0.1
-batch_size = 2
+batch_size = 24
 
 # Configure training/optimization
 clip = 50.0
 teacher_forcing_ratio = 0
 learning_rate = 0.0001
 decoder_learning_ratio = 5.0
-n_iteration = 1
+n_iteration = 10
 print_every = 250
 save_every = 20000
     
