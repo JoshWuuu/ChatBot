@@ -66,14 +66,16 @@ class Decoder(nn.Module):
 
 
 class Seq2Seq(nn.Module):
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder, decoder, vocab):
         super(Seq2Seq, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.vocab = vocab
 
-    def forward(self, source, target, target_vocab_size, teacher_force_ratio=0.5):
+    def forward(self, source, target, teacher_force_ratio=0.5):
         batch_size = source.shape[1]
         target_len = target.shape[0]
+        target_vocab_size = len(self.vocab)
 
         outputs = torch.zeros(target_len, batch_size, target_vocab_size).to(config.device)
 
@@ -102,9 +104,9 @@ class Seq2Seq(nn.Module):
 
         return outputs
     
-class Encoder_att(nn.Module):
+class EncoderAtt(nn.Module):
     def __init__(self, input_size, embedding_size, hidden_size, num_layers, p):
-        super(Encoder_att, self).__init__()
+        super(EncoderAtt, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
@@ -137,11 +139,11 @@ class Encoder_att(nn.Module):
         return encoder_states, hidden, cell
 
 
-class Decoder_att(nn.Module):
+class DecoderAtt(nn.Module):
     def __init__(
         self, input_size, embedding_size, hidden_size, output_size, num_layers, p
     ):
-        super(Decoder_att, self).__init__()
+        super(DecoderAtt, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
@@ -188,15 +190,17 @@ class Decoder_att(nn.Module):
         return predictions, hidden, cell
 
 
-class Seq2Seq_att(nn.Module):
-    def __init__(self, encoder, decoder):
-        super(Seq2Seq_att, self).__init__()
+class Seq2SeqAtt(nn.Module):
+    def __init__(self, encoder, decoder, vocab):
+        super(Seq2SeqAtt, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.vocab = vocab
 
-    def forward(self, source, target, target_vocab_size, teacher_force_ratio=0.5):
+    def forward(self, source, target, teacher_force_ratio=0.5):
         batch_size = source.shape[1]
         target_len = target.shape[0]
+        target_vocab_size = len(self.vocab)
 
         outputs = torch.zeros(target_len, batch_size, target_vocab_size).to(config.device)
         encoder_states, hidden, cell = self.encoder(source)
