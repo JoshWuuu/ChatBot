@@ -105,15 +105,15 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
             # plot to tensorboard
             writer.add_scalar("Training loss", loss, global_step=step)
             step += 1
-
+            break
         
         # score = bleu(test_data[1:100], model, german, english, device)
         mean_loss = sum(losses) / len(losses)
-        bleu_score = bleu_score(response_list, target_list, vocab)
+        bleu_s = calculate_bleu_score(response_list, target_list, vocab)
         loss_list.append(mean_loss)
-        bleu_score_list.append(bleu_score)
+        bleu_score_list.append(bleu_s)
         print('Train Loss: {:.4f}, Bleu Score: {:.4f}'.format(
-                     mean_loss, bleu_score))
+                     mean_loss, bleu_s))
         
         scheduler.step(mean_loss)
         
@@ -133,11 +133,11 @@ def model_train(model_name, model, vocab, learning_rate, num_epochs, train_itera
     os.makedirs(config.result_dir, exist_ok=True)
     with open(f'{config.result_dir}/{algorithm}_loss.csv', 'w') as f:
         for loss in loss_list:
-            csv.writer(f).writerow([loss.item()])
+            csv.writer(f).writerow([loss])
     
     with open(f'{config.result_dir}/{algorithm}_bleu_score.csv', 'w') as f:
         for bleu_s in bleu_score_list:
-            csv.writer(f).writerow([bleu_s.item()])
+            csv.writer(f).writerow([bleu_s])
 
     plot_result()
     print('plot the result!')
@@ -156,17 +156,19 @@ def calculate_bleu_score(output, target, vocab):
     """
     targets = []
     outputs = []
-
+    
     for i in range(len(output)):
+        temp_target, temp_output = [], []
         for j in range(len(output[i])):
-            temp_target, temp_output = [], []
             if output[i][j] not in [0, 1, 2, 3]:
                 indexToWord = vocab.itos[output[i][j]]
                 temp_output.append(indexToWord)
+        for j in range(len(target[i])):
             if target[i][j] not in [0, 1, 2, 3]:
                 indexToWord = vocab.itos[target[i][j]]
                 temp_target.append(indexToWord)
-        
+        outputs.append(temp_output)
+        targets.append([temp_target])
     return bleu_score(outputs, targets)
 
 def plot_result():
