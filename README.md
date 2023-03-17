@@ -17,7 +17,7 @@ This part is using seq2seq model. The encoder-decoder network is built with att 
 * Model: GRU, LSTM, Transformer
 * Model tuning: lr or batch size exploration \
 \
-Reference: https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
+Reference: https://pytorch.org/tutorials/beginner/chatbot_tutorial.html and https://github.com/aladdinpersson/Machine-Learning-Collection
 
 ## ChatGPT
 The final part is using popular openai gpt model and streamlit to build the chat bot with gui. The bot use openai engine, text-davinci-003 as the response generator. The bot seems smarter than the previous three methods, since the model is larger and pre-trained on the larger dataset. \
