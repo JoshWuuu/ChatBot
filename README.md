@@ -15,7 +15,8 @@ This part is using seq2seq model. The encoder-decoder network is built with att 
 * Activation function: ReLu, GeLu 
 * Attention layer: dot, general, concate
 * Model: GRU, LSTM, Transformer
-* Model tuning: lr or batch size exploration
+* Model tuning: lr or batch size exploration \
+\
 Reference: https://pytorch.org/tutorials/beginner/chatbot_tutorial.html
 
 ## ChatGPT
